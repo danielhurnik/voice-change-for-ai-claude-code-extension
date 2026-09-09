@@ -128,3 +128,11 @@ crackle, compressor, filters), synthesized *burp*/*sigh*/*gulp*/*cough*/*hiccup*
 Kokoro-82M via kokoro-js with an OS-voice fallback, cross-platform playback that
 starts after the first line. Self-test runs the whole pipeline on a synthetic
 voice. Not yet built: the your-own-impression cloning idea — dropped, see above.
+
+**2026-09-09 — first real listen (Windows, Kokoro).** Lessons, so we don't
+relearn them: pitch-down + octave growl + reverb = *creepy*, not manic — Doc is
+now pitched slightly up with nasal/presence peaks and no reverb. The first
+synthesized burp was a fart (low buzz through a lowpass); a burp needs a raspy
+voice source through vowel formants with a lip-pop. `--ramp`, `--intensity`,
+`--voice` and `--sfx spoken` exist for tuning by ear. Verdict from the user:
+"that's really funny". Next: more voices — a character is one JSON file.
