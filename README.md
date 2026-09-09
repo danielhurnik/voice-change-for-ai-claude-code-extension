@@ -69,8 +69,8 @@ whoever needs to hear it).
 
 | id | name | who they are | aliases |
 |---|---|---|---|
-| `mad-scientist` | Doc | Cynical genius grandpa scientist. Drunk on science, and also just drunk. | rick, doc, scientist, grandpa, genius |
-| `nervous-teen` | Kid | Anxious teenage sidekick. Asks the question everyone is thinking. | morty, kid, teen, junior, intern, sidekick |
+| `mad-scientist` | Doc | Cynical genius grandpa scientist. Smartest man in every universe, exhausted by all of them. | rick, doc, scientist, grandpa, genius |
+| `nervous-teen` | Kid | Anxious teenage sidekick. Asks the question everyone is thinking, then apologizes for it. | morty, kid, teen, junior, intern, sidekick |
 | `movie-trailer` | The Voice | The movie-trailer announcer. Your linter warning has never sounded so apocalyptic. | trailer, announcer, in-a-world, epic |
 | `demon-overlord` | Malachar | Ancient demon lord. Weirdly good at TypeScript. | demon, overlord, villain, dark-lord, boss |
 | `chipmunk` | Nibbles | Hyperactive chipmunk on a sugar high. | squirrel, helium, hyper, sugar |
