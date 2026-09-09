@@ -9,10 +9,10 @@
     "speed": 1.1,
     "system": { "darwin": "Junior", "win32": "Microsoft Zira Desktop", "linux": "en-us+m3" },
     "effects": [
-      { "type": "pitch", "semitones": 5 },
-      { "type": "vibrato", "rate": 6.5, "depthMs": 0.6 },
       { "type": "highpass", "freq": 200 },
-      { "type": "reverb", "mix": 0.05, "decay": 0.3 }
+      { "type": "pitch", "semitones": 4 },
+      { "type": "vibrato", "rate": 6.5, "depthMs": 0.5 },
+      { "type": "peak", "freq": 2500, "q": 1, "gainDb": 2 }
     ]
   }
 }

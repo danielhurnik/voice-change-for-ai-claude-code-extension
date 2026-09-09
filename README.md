@@ -146,9 +146,23 @@ node scripts/selftest.mjs                         # runs everything with a synth
 ```
 
 Options: `--engine auto|kokoro|system|fake`, `--no-play`, `--out <dir>`, `--gap <ms>`,
-`--characters <dir>`. Engines: `kokoro` is the neural model (default), `system` is the
-OS voice (macOS `say`, Windows SAPI, Linux `espeak-ng`) — instant and robotic, `fake`
-is a synthetic buzz for testing effect chains.
+`--characters <dir>`, `--intensity <n>`, `--dry`. Engines: `kokoro` is the neural model
+(default), `system` is the OS voice (macOS `say`, Windows SAPI, Linux `espeak-ng`) —
+instant and robotic, `fake` is a synthetic buzz for testing effect chains.
+
+### Tuning a voice by ear
+
+```bash
+node scripts/say.mjs doc "L-listen, kid. *burp* Six thousand realities." --ramp        # intensity 0 → 0.35 → 0.7 → 1, back to back
+node scripts/say.mjs doc "..." --intensity 0.5                                           # half the effects; --dry = raw voice
+node scripts/say.mjs doc "..." --voice am_puck                                           # audition another Kokoro base voice
+```
+
+`--intensity` scales the character's whole chain (pitch, growl, mixes, drive…) with one
+knob; pick the level you like, then bake it into the JSON. Rules of thumb learned the
+hard way: pitch down + reverb + gravel reads as *creepy*; pitch slightly up + presence
+peaks + light distortion reads as *manic*. The scripts print `Voice engine: …` so you
+know whether you're hearing Kokoro or the OS fallback.
 
 Environment: `VOICE_CHANGE_OUT` (where WAVs go), `VOICE_CHANGE_CACHE` (model cache),
 `VOICE_CHANGE_PLAYER` (force a player command), `VOICE_CHANGE_CHARACTERS` (extra

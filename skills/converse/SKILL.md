@@ -57,6 +57,7 @@ It synthesizes every line in that character's voice, starts playing after the fi
 - If it prints `kokoro-js is not installed`, run `npm install --prefix "${CLAUDE_PLUGIN_ROOT}"` and retry. If that isn't possible, add `--engine system` — the OS voice, worse but instant.
 - If it prints `No audio player found`, give the user the WAV path so they can play it themselves.
 - Unknown character in the script → the error lists the known ids. Fix the id, don't invent characters.
+- Voices too much / too little? Add `--intensity 0.5` (or `1.5`) to scale every character's effect chain, `--dry` for raw voices. To tune one character by ear, use the `say` skill's `--ramp` and `--voice` options, then bake the result into its JSON.
 
 ## 4. Transcript
 

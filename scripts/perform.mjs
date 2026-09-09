@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Perform a script: synthesize every line in its character's voice, play it, save the WAV.
 //
-//   node scripts/perform.mjs <script.json | -> [--engine auto|kokoro|system] [--no-play] [--out <dir>]
-//                                              [--gap <ms>] [--characters <dir>]
+//   node scripts/perform.mjs <script.json | -> [--engine auto|kokoro|system|fake] [--no-play] [--out <dir>]
+//                                              [--gap <ms>] [--characters <dir>] [--intensity <0..2>] [--dry]
 //
 // Script format (also accepted: a bare array of lines):
 //   { "title": "why the build is slow",
@@ -14,13 +14,13 @@ import path from "node:path";
 import { concat, normalize, silence } from "./lib/effects.mjs";
 import { describeCharacters, loadCharacters, resolveCharacter } from "./lib/characters.mjs";
 import { createPlayer } from "./lib/play.mjs";
-import { outputDir, renderLine, seconds, slugify, tempWav, timestamp, writeWav } from "./lib/render.mjs";
+import { describeEngine, outputDir, renderLine, seconds, slugify, tempWav, timestamp, writeWav } from "./lib/render.mjs";
 import { createEngine } from "./lib/tts.mjs";
 
 const log = (msg) => process.stderr.write(`${msg}\n`);
 
 function parseArgs(argv) {
-  const opts = { engine: "auto", play: true, gap: 350, out: null, characters: [], help: false };
+  const opts = { engine: "auto", play: true, gap: 350, out: null, characters: [], intensity: 1, help: false };
   const positional = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -29,10 +29,13 @@ function parseArgs(argv) {
     else if (a === "--out") opts.out = argv[++i];
     else if (a === "--gap") opts.gap = Number(argv[++i]);
     else if (a === "--characters") opts.characters.push(argv[++i]);
+    else if (a === "--intensity") opts.intensity = Number(argv[++i]);
+    else if (a === "--dry") opts.intensity = 0;
     else if (a === "--help" || a === "-h") opts.help = true;
     else if (a.startsWith("--")) throw new Error(`Unknown option ${a}`);
     else positional.push(a);
   }
+  if (!Number.isFinite(opts.intensity) || opts.intensity < 0) throw new Error("--intensity must be a number ≥ 0");
   return { opts, positional };
 }
 
@@ -62,7 +65,7 @@ function readScript(source) {
 async function main() {
   const { opts, positional } = parseArgs(process.argv.slice(2));
   if (opts.help || !positional.length) {
-    log(`Usage: node scripts/perform.mjs <script.json | -> [--engine auto|kokoro|system] [--no-play] [--out <dir>] [--gap <ms>]\n`);
+    log(`Usage: node scripts/perform.mjs <script.json | -> [--engine auto|kokoro|system|fake] [--no-play] [--out <dir>] [--gap <ms>] [--intensity 0.5] [--dry]\n`);
     log("Characters:\n" + describeCharacters(loadCharacters(opts.characters)));
     process.exit(opts.help ? 0 : 1);
   }
@@ -84,11 +87,12 @@ async function main() {
   const parts = [];
   const started = Date.now();
 
-  log(`🎙  ${title}  (${script.lines.length} lines, engine: ${engine.name})`);
+  log(`🎙  ${title}  (${script.lines.length} lines${opts.intensity !== 1 ? `, intensity ${opts.intensity}` : ""})`);
   for (let i = 0; i < script.lines.length; i++) {
     const line = script.lines[i];
     const c = cast[i];
-    const audio = await renderLine(engine, c, line.text);
+    const audio = await renderLine(engine, c, line.text, { intensity: opts.intensity });
+    if (i === 0) log(`Voice engine: ${describeEngine(engine, c)}`);
     log(`[${i + 1}/${script.lines.length}] ${c.name}: ${line.text}`);
     if (!audio.length) continue;
     const pause = silence((line.pauseMs ?? opts.gap) / 1000);

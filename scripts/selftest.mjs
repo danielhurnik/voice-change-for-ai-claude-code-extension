@@ -8,7 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
-import { applyEffects, concat, pitchShift, silence, timeStretch } from "./lib/effects.mjs";
+import { applyEffects, concat, pitchShift, scaleEffects, silence, timeStretch } from "./lib/effects.mjs";
 import { loadCharacters, resolveCharacter } from "./lib/characters.mjs";
 import { renderLine, outputDir, writeWav, seconds } from "./lib/render.mjs";
 import { parseLine, SFX, synthSfx } from "./lib/sfx.mjs";
@@ -76,6 +76,18 @@ check("every effect type runs", () => {
     assert.ok(s.rms > 1e-4, `${fx.type} produced silence`);
   }
   assert.throws(() => applyEffects(x, [{ type: "nope" }]), /Unknown effect/);
+});
+check("intensity scales the chain: 0 is untouched, 0.5 runs, 1.5 runs", () => {
+  const x = fakeVoice("scale me");
+  const chain = [{ type: "pitch", semitones: 4 }, { type: "gravel", amount: 0.5 }, { type: "reverb", mix: 0.3 }, { type: "lowpass", freq: 2000 }];
+  assert.equal(applyEffects(x, chain, SAMPLE_RATE, { intensity: 0 }), x);
+  const half = scaleEffects(chain, 0.5);
+  assert.equal(half[0].semitones, 2);
+  assert.equal(half[1].amount, 0.25);
+  assert.equal(half[2].mix, 0.15);
+  assert.equal(half[3].freq, 6500);
+  stats(applyEffects(x, chain, SAMPLE_RATE, { intensity: 0.5 }));
+  stats(applyEffects(x, chain, SAMPLE_RATE, { intensity: 1.5 }));
 });
 
 console.log("sound effects & parsing");

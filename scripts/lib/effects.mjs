@@ -125,14 +125,14 @@ function hann(n) {
 
 /**
  * WSOLA time stretch: factor 2 = twice as long, pitch unchanged.
- * 50 ms grains, 50% overlap, ±10 ms similarity search so grains line up in phase.
+ * 32 ms grains, 50% overlap, ±8 ms similarity search so grains line up in phase.
  */
 export function timeStretch(x, factor, sr = SAMPLE_RATE) {
   if (Math.abs(factor - 1) < 1e-4 || x.length < 64) return x;
-  const N = Math.round(0.05 * sr);
+  const N = Math.round(0.032 * sr);
   const Hs = N >> 1;
   const Ha = Hs / factor;
-  const delta = Math.round(0.01 * sr);
+  const delta = Math.round(0.008 * sr);
   const window = hann(N);
   const outLen = Math.round(x.length * factor);
   const y = new Float32Array(outLen + N);
@@ -148,7 +148,7 @@ export function timeStretch(x, factor, sr = SAMPLE_RATE) {
       let best = -Infinity;
       for (let cand = lo; cand <= hi; cand++) {
         let c = 0;
-        for (let i = 0; i < Hs; i += 2) c += x[cand + i] * x[target + i];
+        for (let i = 0; i < Hs; i++) c += x[cand + i] * x[target + i];
         if (c > best) {
           best = c;
           pos = cand;
@@ -201,13 +201,14 @@ export function bitcrush(x, bits = 8, downsample = 4) {
   return y;
 }
 
-/** Octave-down doubling + soft clip: growl, gruffness, gravel. */
+/** Octave-down doubling (low-passed so it rumbles instead of buzzing) + gentle soft clip: growl, gruffness, gravel. */
 export function gravel(x, amount = 0.4, sr = SAMPLE_RATE) {
-  const sub = pitchShift(x, -12, sr);
+  if (amount <= 0) return x;
+  const sub = biquad(pitchShift(x, -12, sr), "lowpass", 1500, 0.707, 0, sr);
   const n = Math.min(x.length, sub.length);
   const y = new Float32Array(x.length);
   for (let i = 0; i < x.length; i++) y[i] = x[i] + (i < n ? amount * sub[i] : 0);
-  return distortion(y, 1.2);
+  return distortion(y, 1 + 0.4 * amount);
 }
 
 export function tremolo(x, { rate = 6, depth = 0.5 } = {}, sr = SAMPLE_RATE) {
@@ -326,14 +327,55 @@ export function crackle(x, { amount = 0.3, density = 25 } = {}, sr = SAMPLE_RATE
 
 // ---------- chain ----------
 
+const lerp = (a, b, k) => a + (b - a) * k;
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+/**
+ * Scale a whole effect chain by one knob: 0 = untouched voice, 1 = the chain as written, 1.5 = more.
+ * Every parameter moves between its "transparent" value and the configured one.
+ */
+export function scaleEffects(effects, k = 1) {
+  if (k === 1) return effects;
+  if (k <= 0) return [];
+  return effects.map((fx) => {
+    const p = { ...fx };
+    switch (fx.type) {
+      case "pitch": p.semitones = (fx.semitones ?? 0) * k; break;
+      case "speed": p.factor = lerp(1, fx.factor ?? 1, k); break;
+      case "ringmod": p.mix = clamp01((fx.mix ?? 1) * k); break;
+      case "distortion":
+      case "telephone": p.drive = lerp(1, fx.drive ?? 2, k); break;
+      case "bitcrush":
+        p.bits = Math.round(lerp(16, fx.bits ?? 8, k));
+        p.downsample = Math.max(1, Math.round(lerp(1, fx.downsample ?? 4, k)));
+        break;
+      case "lowpass": p.freq = lerp(11000, fx.freq ?? 1000, Math.min(1, k)); break;
+      case "highpass": p.freq = lerp(20, fx.freq ?? 1000, Math.min(1, k)); break;
+      case "peak": p.gainDb = (fx.gainDb ?? 0) * k; break;
+      case "reverb": p.mix = clamp01((fx.mix ?? 0.3) * k); break;
+      case "echo": p.mix = clamp01((fx.mix ?? 0.4) * k); break;
+      case "chorus": p.mix = clamp01((fx.mix ?? 0.5) * k); break;
+      case "vibrato": p.depthMs = (fx.depthMs ?? 1.5) * k; break;
+      case "tremolo": p.depth = clamp01((fx.depth ?? 0.5) * k); break;
+      case "compress": p.ratio = Math.max(1, lerp(1, fx.ratio ?? 4, k)); break;
+      case "gravel": p.amount = (fx.amount ?? 0.4) * k; break;
+      case "crackle": p.amount = (fx.amount ?? 0.3) * k; break;
+      case "gain": p.db = (fx.db ?? 0) * k; break;
+      default: break;
+    }
+    return p;
+  });
+}
+
 /**
  * Apply a character's effect chain. Each entry is { type, ...params }.
  * Available types: pitch, speed, ringmod, distortion, bitcrush, lowpass, highpass, bandpass, peak,
  * reverb, vibrato, chorus, tremolo, echo, compress, gravel, crackle, telephone, gain, normalize.
+ * `intensity` scales the whole chain (see scaleEffects).
  */
-export function applyEffects(x, effects = [], sr = SAMPLE_RATE) {
+export function applyEffects(x, effects = [], sr = SAMPLE_RATE, { intensity = 1 } = {}) {
   let y = x;
-  for (const fx of effects) {
+  for (const fx of scaleEffects(effects, intensity)) {
     const { type, ...p } = fx;
     switch (type) {
       case "pitch":

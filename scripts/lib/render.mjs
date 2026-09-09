@@ -13,8 +13,9 @@ import { encodeWav, SAMPLE_RATE } from "./wav.mjs";
  * @param {{ synth: (text: string, voice: object) => Promise<Float32Array> }} engine
  * @param {object} character
  * @param {string} text
+ * @param {{ intensity?: number }} [opts] 0 = the raw voice, 1 = the character's chain as written
  */
-export async function renderLine(engine, character, text) {
+export async function renderLine(engine, character, text, { intensity = 1 } = {}) {
   const parts = [];
   for (const seg of parseLine(text)) {
     if (seg.type === "sfx") {
@@ -24,8 +25,15 @@ export async function renderLine(engine, character, text) {
     }
   }
   if (!parts.length) return new Float32Array(0);
-  const processed = applyEffects(concat(parts), character.voice.effects);
+  const processed = applyEffects(concat(parts), character.voice.effects, SAMPLE_RATE, { intensity });
   return normalize(fade(processed, 8), 0.9);
+}
+
+/** Human-readable "what actually spoke" for the logs. */
+export function describeEngine(engine, character) {
+  if (engine.name === "kokoro") return `kokoro (${character.voice.kokoro || "af_heart"})`;
+  if (engine.name === "system") return `system voice (${process.platform})`;
+  return engine.name;
 }
 
 export function outputDir(override) {
