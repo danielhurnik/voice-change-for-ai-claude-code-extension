@@ -5,7 +5,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { applyEffects, concat, fade, normalize, silence } from "./effects.mjs";
-import { parseLine, synthSfx } from "./sfx.mjs";
+import { ONOMATOPOEIA, parseLine, synthSfx } from "./sfx.mjs";
+
+export const SFX_MODES = ["synth", "spoken"];
 import { PLUGIN_ROOT } from "./characters.mjs";
 import { encodeWav, SAMPLE_RATE } from "./wav.mjs";
 
@@ -13,13 +15,19 @@ import { encodeWav, SAMPLE_RATE } from "./wav.mjs";
  * @param {{ synth: (text: string, voice: object) => Promise<Float32Array> }} engine
  * @param {object} character
  * @param {string} text
- * @param {{ intensity?: number }} [opts] 0 = the raw voice, 1 = the character's chain as written
+ * @param {{ intensity?: number, sfxMode?: "synth"|"spoken" }} [opts]
+ *   intensity: 0 = the raw voice, 1 = the character's chain as written.
+ *   sfxMode: "synth" builds *burp* etc. from oscillators; "spoken" has the voice say "Brraaap." instead.
+ *   Falls back to the character's `sfxMode`, then "synth".
  */
-export async function renderLine(engine, character, text, { intensity = 1 } = {}) {
+export async function renderLine(engine, character, text, { intensity = 1, sfxMode } = {}) {
+  const mode = sfxMode || character.sfxMode || "synth";
+  if (!SFX_MODES.includes(mode)) throw new Error(`Unknown sfx mode "${mode}". Use one of: ${SFX_MODES.join(", ")}`);
   const parts = [];
   for (const seg of parseLine(text)) {
     if (seg.type === "sfx") {
-      parts.push(synthSfx(seg.name), silence(0.05));
+      const sound = mode === "spoken" ? await engine.synth(ONOMATOPOEIA[seg.name] ?? seg.name, character.voice) : synthSfx(seg.name);
+      parts.push(sound, silence(0.05));
     } else {
       parts.push(await engine.synth(seg.text, character.voice), silence(0.06));
     }

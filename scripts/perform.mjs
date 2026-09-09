@@ -2,7 +2,7 @@
 // Perform a script: synthesize every line in its character's voice, play it, save the WAV.
 //
 //   node scripts/perform.mjs <script.json | -> [--engine auto|kokoro|system|fake] [--no-play] [--out <dir>]
-//                                              [--gap <ms>] [--characters <dir>] [--intensity <0..2>] [--dry]
+//                                              [--gap <ms>] [--characters <dir>] [--intensity <0..2>] [--dry] [--sfx synth|spoken]
 //
 // Script format (also accepted: a bare array of lines):
 //   { "title": "why the build is slow",
@@ -31,6 +31,7 @@ function parseArgs(argv) {
     else if (a === "--characters") opts.characters.push(argv[++i]);
     else if (a === "--intensity") opts.intensity = Number(argv[++i]);
     else if (a === "--dry") opts.intensity = 0;
+    else if (a === "--sfx") opts.sfxMode = argv[++i];
     else if (a === "--help" || a === "-h") opts.help = true;
     else if (a.startsWith("--")) throw new Error(`Unknown option ${a}`);
     else positional.push(a);
@@ -65,7 +66,7 @@ function readScript(source) {
 async function main() {
   const { opts, positional } = parseArgs(process.argv.slice(2));
   if (opts.help || !positional.length) {
-    log(`Usage: node scripts/perform.mjs <script.json | -> [--engine auto|kokoro|system|fake] [--no-play] [--out <dir>] [--gap <ms>] [--intensity 0.5] [--dry]\n`);
+    log(`Usage: node scripts/perform.mjs <script.json | -> [--engine auto|kokoro|system|fake] [--no-play] [--out <dir>] [--gap <ms>] [--intensity 0.5] [--dry] [--sfx synth|spoken]\n`);
     log("Characters:\n" + describeCharacters(loadCharacters(opts.characters)));
     process.exit(opts.help ? 0 : 1);
   }
@@ -91,7 +92,7 @@ async function main() {
   for (let i = 0; i < script.lines.length; i++) {
     const line = script.lines[i];
     const c = cast[i];
-    const audio = await renderLine(engine, c, line.text, { intensity: opts.intensity });
+    const audio = await renderLine(engine, c, line.text, { intensity: opts.intensity, sfxMode: opts.sfxMode });
     if (i === 0) log(`Voice engine: ${describeEngine(engine, c)}`);
     log(`[${i + 1}/${script.lines.length}] ${c.name}: ${line.text}`);
     if (!audio.length) continue;

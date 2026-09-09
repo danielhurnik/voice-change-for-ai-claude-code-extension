@@ -9,6 +9,7 @@
 //   --dry             same as --intensity 0
 //   --ramp            the line four times in a row: intensity 0, 0.35, 0.7, 1 — pick by ear
 //   --voice am_puck   try a different Kokoro base voice without editing the character file
+//   --sfx spoken      the voice says "Brraaap." instead of the synthesized burp (default: synth)
 
 import path from "node:path";
 import { concat, silence } from "./lib/effects.mjs";
@@ -22,7 +23,7 @@ const RAMP = [0, 0.35, 0.7, 1];
 
 async function main() {
   const argv = process.argv.slice(2);
-  const opts = { engine: "auto", play: true, out: null, characters: [], intensity: 1, ramp: false, list: false, voice: null };
+  const opts = { engine: "auto", play: true, out: null, characters: [], intensity: 1, ramp: false, list: false, voice: null, sfxMode: undefined };
   const positional = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -34,6 +35,7 @@ async function main() {
     else if (a === "--dry") opts.intensity = 0;
     else if (a === "--ramp") opts.ramp = true;
     else if (a === "--voice") opts.voice = argv[++i];
+    else if (a === "--sfx") opts.sfxMode = argv[++i];
     else if (a === "--list") opts.list = true;
     else if (a.startsWith("--")) throw new Error(`Unknown option ${a}`);
     else positional.push(a);
@@ -41,7 +43,7 @@ async function main() {
   if (!Number.isFinite(opts.intensity) || opts.intensity < 0) throw new Error("--intensity must be a number ≥ 0");
   const chars = loadCharacters(opts.characters);
   if (opts.list || positional.length < 2) {
-    log(`Usage: node scripts/say.mjs <character> "text" [--engine auto|kokoro|system|fake] [--intensity 0.5] [--dry] [--ramp] [--voice am_puck] [--no-play]\n`);
+    log(`Usage: node scripts/say.mjs <character> "text" [--engine auto|kokoro|system|fake] [--intensity 0.5] [--dry] [--ramp] [--voice am_puck] [--sfx synth|spoken] [--no-play]\n`);
     log(describeCharacters(chars));
     process.exit(opts.list ? 0 : 1);
   }
@@ -55,7 +57,7 @@ async function main() {
   const levels = opts.ramp ? RAMP : [opts.intensity];
   const takes = [];
   for (const intensity of levels) {
-    takes.push(await renderLine(engine, character, text, { intensity }), silence(0.45));
+    takes.push(await renderLine(engine, character, text, { intensity, sfxMode: opts.sfxMode }), silence(0.45));
     if (opts.ramp) log(`  rendered at intensity ${intensity}`);
   }
   const audio = concat(takes);

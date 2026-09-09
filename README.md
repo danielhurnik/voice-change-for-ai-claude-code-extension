@@ -132,6 +132,7 @@ A character is one JSON file. Drop it in `~/.config/voice-change-for-ai/characte
 | `gain` / `normalize` | `db` / `peak` | level |
 
 Inline sound effects in any line: `*burp*`, `*belch*`, `*sigh*`, `*gulp*`, `*cough*`, `*hiccup*` — they can even interrupt a word (`node_mo *burp* dules`).
+They are synthesized from scratch (a burp is a raspy voice-box buzz shaped by vowel formants, with a lip-pop at the end); if you'd rather have the character *say* "Brraaap." cartoon-style, pass `--sfx spoken` or put `"sfxMode": "spoken"` in the character file.
 Text in `(parentheses)` is a stage direction and is not spoken.
 
 ## Command line
@@ -156,6 +157,7 @@ instant and robotic, `fake` is a synthetic buzz for testing effect chains.
 node scripts/say.mjs doc "L-listen, kid. *burp* Six thousand realities." --ramp        # intensity 0 → 0.35 → 0.7 → 1, back to back
 node scripts/say.mjs doc "..." --intensity 0.5                                           # half the effects; --dry = raw voice
 node scripts/say.mjs doc "..." --voice am_puck                                           # audition another Kokoro base voice
+node scripts/say.mjs doc "L-listen. *burp* Whatever." --sfx spoken                       # cartoon 'Brraaap.' instead of the synthesized burp
 ```
 
 `--intensity` scales the character's whole chain (pitch, growl, mixes, drive…) with one

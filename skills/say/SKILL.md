@@ -25,6 +25,7 @@ Tuning by ear — when the user says a voice is too much, too little, too dark, 
 - `--ramp` plays the line at intensity 0 → 0.35 → 0.7 → 1 back-to-back so they can say which one they liked.
 - `--intensity 0.5` (or `--dry` for the raw voice) scales the character's whole effect chain.
 - `--voice am_puck` swaps the Kokoro base voice (`am_`/`bm_` male, `af_`/`bf_` female; American/British).
+- `--sfx spoken` makes the voice *say* "Brraaap." instead of the synthesized burp — cartoon style. Bake it in with `"sfxMode": "spoken"` at the top level of the character's JSON.
 - Once they pick, bake it into the character's JSON (`voice.effects`, `voice.kokoro`) so `/converse` uses it too. Rules of thumb: pitch down + reverb + gravel reads as *creepy*; pitch up + presence peaks + light distortion reads as *manic*.
 
 Afterwards print `**Name:** line` and the WAV path. Nothing else.
