@@ -1,0 +1,14 @@
+{
+  "name": "voice-change-for-ai",
+  "displayName": "Voice Change for AI",
+  "description": "Comedy dialogues about your code, performed out loud in silly character voices. /converse and /say. Fully offline.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Daniel Hurník",
+    "url": "https://github.com/danielhurnik"
+  },
+  "homepage": "https://github.com/danielhurnik/voice-change-for-ai-claude-code-extension",
+  "repository": "https://github.com/danielhurnik/voice-change-for-ai-claude-code-extension",
+  "license": "MIT",
+  "keywords": ["voice", "tts", "text-to-speech", "audio", "comedy", "characters"]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "voice-change-for-ai",
+  "version": "0.1.0",
+  "description": "A Claude Code plugin that performs comedy dialogues about your code in silly character voices, entirely offline.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "say": "node scripts/say.mjs",
+    "perform": "node scripts/perform.mjs",
+    "test": "node scripts/selftest.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.5.1",
+    "kokoro-js": "^1.2.1"
+  }
+}

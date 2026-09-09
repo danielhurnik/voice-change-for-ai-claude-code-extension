@@ -121,3 +121,10 @@ are parked as a v2-maybe.
   interjection samples). Easy for anyone to add their own.
 - **Voice engine, all local:** Piper TTS (free, offline, per-voice models)
   → sox/ffmpeg effects → afplay/paplay/powershell audio. No server, no keys.
+
+**2026-09-09 — v1 built.** `/converse` and `/say` skills, nine characters, a
+pure-JS effects engine (pitch/WSOLA, gravel, ring mod, reverb, echo, bitcrush,
+crackle, compressor, filters), synthesized *burp*/*sigh*/*gulp*/*cough*/*hiccup*,
+Kokoro-82M via kokoro-js with an OS-voice fallback, cross-platform playback that
+starts after the first line. Self-test runs the whole pipeline on a synthetic
+voice. Not yet built: the your-own-impression cloning idea — dropped, see above.

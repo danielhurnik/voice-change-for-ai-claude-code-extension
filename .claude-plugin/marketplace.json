@@ -1,0 +1,18 @@
+{
+  "name": "voice-change",
+  "owner": {
+    "name": "Daniel Hurník",
+    "url": "https://github.com/danielhurnik"
+  },
+  "plugins": [
+    {
+      "name": "voice-change-for-ai",
+      "source": "./",
+      "description": "Comedy dialogues about your code, performed out loud in silly character voices. /converse and /say. Fully offline.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Daniel Hurník"
+      }
+    }
+  ]
+}
