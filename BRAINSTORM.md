@@ -86,3 +86,38 @@ Plus manual sliders for people who want to cook their own.
 - Web page first, or is the Discord bot the actual dream?
 - Name check: is the repo name final, or do we brainstorm that too?
   (candidates: `voicemangler`, `say-it-weird`, `demon-tts`, `chipmunk.exe`)
+
+---
+
+## Decision log
+
+**2026-09-09 — Claude Code extension first.** Nobody's in a browser while
+they're coding (or clauding). The web page idea moves to "maybe later".
+
+**2026-09-09 — Characters, not just effects.** The product is character
+*conversations*: prompt a topic, get a two-hander performed out loud
+(mad-scientist grandpa × nervous teen, in a garage). Two layers:
+
+1. **Persona text** — Claude writes the dialogue in the character's speech
+   style. This is where most of the comedy lives.
+2. **Archetype voices** — per-character voice recipes built from generic TTS
+   plus effects (pitch, gravel, pacing, interjection samples). Evokes the
+   character; is not the actor.
+
+**Hard rule:** no cloning of real people's voices (voice actors included) —
+no consent, no clone. Consented voice libraries (e.g. paid ones where the
+voice owner opted in) are the only path to "real-sounding famous-ish" and
+are parked as a v2-maybe.
+
+## Extension architecture (draft)
+
+- **Plugin skill** `/converse <charA> <charB> "<topic>"` — Claude writes the
+  script, a helper voices each line with that character's preset, plays them
+  in order. A little radio play about your bug.
+- **Hook mode (optional)** — a Stop hook speaks each normal Claude reply in
+  your chosen character's voice while you work.
+- **Character = a config file** — `characters/rick-ish.json`: speech-style
+  prompt + voice recipe (Piper voice model, pitch shift, sox effect chain,
+  interjection samples). Easy for anyone to add their own.
+- **Voice engine, all local:** Piper TTS (free, offline, per-voice models)
+  → sox/ffmpeg effects → afplay/paplay/powershell audio. No server, no keys.
