@@ -39,7 +39,7 @@ export async function renderLine(engine, character, text, { intensity = 1, sfxMo
 
 /** Human-readable "what actually spoke" for the logs. */
 export function describeEngine(engine, character) {
-  if (engine.name === "kokoro") return `kokoro (${character.voice.kokoro || "af_heart"})`;
+  if (engine.name === "kokoro") return `kokoro (${character.voice.kokoro || "af_heart"}${character.voice.accent ? `, accent ${character.voice.accent}` : ""})`;
   if (engine.name === "system") return `system voice (${process.platform})`;
   return engine.name;
 }

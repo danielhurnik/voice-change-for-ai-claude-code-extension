@@ -136,3 +136,10 @@ synthesized burp was a fart (low buzz through a lowpass); a burp needs a raspy
 voice source through vowel formants with a lip-pop. `--ramp`, `--intensity`,
 `--voice` and `--sfx spoken` exist for tuning by ear. Verdict from the user:
 "that's really funny". Next: more voices — a character is one JSON file.
+
+**2026-09-09 — accents.** Kokoro phonemizes with espeak-ng, which has real
+accent rules (`en-gb-scotland`, Lancashire, West Midlands, Caribbean, NYC).
+`voice.accent` routes a character's text through one of them via
+`generate_from_ids`, so pronunciation changes, not just spelling. Hamish the
+Scottish sysadmin is the first user. `ʉ` is mapped to `uː` because Kokoro
+never trained on it. Untested by ear as of writing.

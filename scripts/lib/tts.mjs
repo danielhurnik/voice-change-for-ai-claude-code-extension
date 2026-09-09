@@ -81,15 +81,94 @@ async function loadKokoro(log) {
   return kokoroPromise;
 }
 
+/** The accents of English in the phonemizer's espeak-ng build (it ships no other languages). */
+export const ACCENTS = {
+  "en-us": "American",
+  "en-us-nyc": "New York City",
+  "en-gb": "British",
+  "en-gb-x-rp": "Received Pronunciation",
+  "en-gb-scotland": "Scottish",
+  "en-gb-x-gbclan": "Lancashire",
+  "en-gb-x-gbcwmd": "West Midlands",
+  "en-029": "Caribbean",
+};
+
+const PUNCTUATION = ';:,.!?¡¿—…"«»“”';
+const PUNCT_RUN = new RegExp(`(\\s*[${PUNCTUATION}]+\\s*)+`, "g");
+
+/**
+ * Kokoro's own text → phoneme pipeline (normalize, keep punctuation, espeak the rest, tidy symbols),
+ * but with any espeak-ng voice — so a character can speak with a Scottish accent instead of the
+ * en-us / en-gb default that the voice's letter would pick.
+ */
+export async function phonemizeWithAccent(text, accent) {
+  let mod;
+  try {
+    mod = await import("phonemizer");
+  } catch (err) {
+    const e = new Error("phonemizer is not installed — run `npm install` in the plugin folder (needed for voice.accent)");
+    e.cause = err;
+    throw e;
+  }
+  const normalized = text
+    .replace(/[‘’]/g, "'")
+    .replace(/«/g, "“")
+    .replace(/»/g, "”")
+    .replace(/[“”]/g, '"')
+    .replace(/\(/g, "«")
+    .replace(/\)/g, "»")
+    .replace(/[^\S \n]/g, " ")
+    .replace(/ {2,}/g, " ")
+    .trim();
+  const parts = [];
+  let last = 0;
+  for (const m of normalized.matchAll(PUNCT_RUN)) {
+    if (m.index > last) parts.push({ punct: false, text: normalized.slice(last, m.index) });
+    if (m[0]) parts.push({ punct: true, text: m[0] });
+    last = m.index + m[0].length;
+  }
+  if (last < normalized.length) parts.push({ punct: false, text: normalized.slice(last) });
+  const pieces = await Promise.all(
+    parts.map(async (p) => {
+      if (p.punct) return p.text;
+      let out;
+      try {
+        out = await mod.phonemize(p.text, accent);
+      } catch (err) {
+        throw new Error(`espeak-ng could not phonemize with accent "${accent}" (${err.message.split("\n")[0]}). English accents: ${Object.keys(ACCENTS).join(", ")}`);
+      }
+      // some accents write the length mark as an ASCII colon, which Kokoro would read as punctuation
+      return out.join(" ").replace(/:/g, "ː").replace(/ːː+/g, "ː");
+    }),
+  );
+  return pieces
+    .join("")
+    .replace(/ʲ/g, "j")
+    .replace(/r/g, "ɹ")
+    .replace(/x/g, "k")
+    .replace(/ɬ/g, "l")
+    .replace(/ʉː?/g, "uː") // Scottish "hoose": Kokoro never saw ʉ in training, uː is the nearest sound it knows
+    .replace(/ z(?=[;:,.!?¡¿—…"«»“” ]|$)/g, "z")
+    .trim();
+}
+
 async function kokoroSynth(text, voice, log) {
   const tts = await loadKokoro(log);
   const name = voice.kokoro || "af_heart";
   if (!(name in tts.voices)) {
     throw new Error(`Unknown Kokoro voice "${name}". Available: ${Object.keys(tts.voices).join(", ")}`);
   }
+  const opts = { voice: name, speed: voice.speed ?? 1 };
   const parts = [];
   for (const chunk of chunkText(text)) {
-    const audio = await tts.generate(chunk, { voice: name, speed: voice.speed ?? 1 });
+    let audio;
+    if (voice.accent) {
+      const phonemes = await phonemizeWithAccent(chunk, voice.accent);
+      const { input_ids } = tts.tokenizer(phonemes, { truncation: true });
+      audio = await tts.generate_from_ids(input_ids, opts);
+    } else {
+      audio = await tts.generate(chunk, opts);
+    }
     parts.push(convertRate(Float32Array.from(audio.audio), audio.sampling_rate, SAMPLE_RATE));
   }
   return join(parts);

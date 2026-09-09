@@ -112,6 +112,24 @@ check("chunkText keeps sentences together", () => {
   assert.equal(chunks.at(-1), "Four.");
 });
 
+console.log("accents");
+try {
+  await import("phonemizer");
+  const { phonemizeWithAccent } = await import("./lib/tts.mjs");
+  const text = 'About the house, right now. "I cannot believe you pushed to main."';
+  const british = await phonemizeWithAccent(text, "en-gb");
+  const scottish = await phonemizeWithAccent(text, "en-gb-scotland");
+  check("Scottish phonemes differ from British and keep punctuation", () => {
+    assert.notEqual(british, scottish);
+    assert.match(scottish, /ʌuːt/, "aboot");
+    assert.ok(scottish.includes(",") && scottish.includes('"') && scottish.includes("."), "punctuation kept");
+    assert.doesNotMatch(scottish, /[rʉ]/, "symbols Kokoro never trained on are mapped away");
+  });
+} catch (err) {
+  if (/Cannot find package 'phonemizer'/.test(err.message)) console.log("  - skipped (phonemizer not installed — run npm install)");
+  else throw err;
+}
+
 console.log("characters");
 const chars = loadCharacters();
 check("all characters load and aliases resolve", () => {
@@ -119,6 +137,7 @@ check("all characters load and aliases resolve", () => {
   assert.equal(resolveCharacter(chars, "rick")?.id, "mad-scientist");
   assert.equal(resolveCharacter(chars, "Morty")?.id, "nervous-teen");
   assert.equal(resolveCharacter(chars, "Doc")?.id, "mad-scientist");
+  assert.equal(resolveCharacter(chars, "scottish")?.voice.accent, "en-gb-scotland");
   assert.equal(resolveCharacter(chars, "nobody"), undefined);
 });
 

@@ -78,6 +78,7 @@ whoever needs to hear it).
 | `narrator` | Narrator | Calm nature-documentary narrator. Observes developers in their natural habitat. | storyteller, voiceover, documentary |
 | `grandpa-radio` | Gus | 1940s newsreel announcer. Calls the internet "the wireless". | radio, oldtimey, newsreel, 1940s |
 | `ghost` | Whisper | Died in a production outage in 2009. Haunts the legacy code. | spirit, haunted, spooky, phantom |
+| `scottish-engineer` | Hamish | Gruff Scottish sysadmin. Has kept servers alive since dial-up and is no' impressed by yours. | scottish, scot, hamish, glasgow, highlander, sysadmin |
 
 ## Add your own character
 
@@ -107,6 +108,7 @@ A character is one JSON file. Drop it in `~/.config/voice-change-for-ai/characte
 - `kokoro` is one of the Kokoro voices (`af_heart`, `af_bella`, `af_nicole`, `am_michael`,
   `am_onyx`, `am_puck`, `bm_george`, … — `am_` male American, `bf_` female British, and so on).
 - `system` names the OS voice to use when the model isn't available. Optional.
+- `accent` changes the *pronunciation*: an espeak-ng English accent such as `en-gb-scotland`, `en-gb-x-gbclan` (Lancashire), `en-gb-x-gbcwmd` (West Midlands), `en-029` (Caribbean), `en-us-nyc` or `en-gb-x-rp`. Kokoro engine only. Optional.
 - `effects` run in order, on the whole line, sound effects included.
 
 ### Effects
@@ -150,6 +152,30 @@ Options: `--engine auto|kokoro|system|fake`, `--no-play`, `--out <dir>`, `--gap 
 `--characters <dir>`, `--intensity <n>`, `--dry`. Engines: `kokoro` is the neural model
 (default), `system` is the OS voice (macOS `say`, Windows SAPI, Linux `espeak-ng`) —
 instant and robotic, `fake` is a synthetic buzz for testing effect chains.
+
+### Accents
+
+Kokoro turns text into phonemes with espeak-ng before it speaks, and espeak-ng knows
+several accents of English. Setting `voice.accent` on a character routes its lines
+through that accent's rules, so "about the house" really comes out as *aboot the hoose*:
+
+```bash
+node scripts/say.mjs hamish "Och, ye cannae push straight tae main, ye wee numpty."
+node scripts/say.mjs doc "About the house, right now." --accent en-029       # try any accent on any character
+```
+
+| accent | sounds like |
+|---|---|
+| `en-gb-scotland` | Scottish |
+| `en-gb-x-gbclan` | Lancashire |
+| `en-gb-x-gbcwmd` | West Midlands |
+| `en-029` | Caribbean |
+| `en-us-nyc` | New York City |
+| `en-gb-x-rp` / `en-gb` / `en-us` | Received Pronunciation / British / American |
+
+An accent is half pronunciation and half vocabulary, so pair it with dialect spelling
+in the character's `style` (see `characters/scottish-engineer.json`). Only accents of
+English are available — the phonemizer's espeak-ng build ships no other languages.
 
 ### Tuning a voice by ear
 
