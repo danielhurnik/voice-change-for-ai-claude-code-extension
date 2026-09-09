@@ -23,9 +23,16 @@ Write 8–14 lines. Rules:
 - Each line obeys its character's `style` exactly. That *is* the joke — do not soften it, do not make them polite.
 - Be technically right underneath the bit. The smart character's diagnosis must be real, correct advice for the actual topic; the naive character's questions are the ones a junior would really ask.
 - Spoken lines are short — under 25 words. `...` and ` — ` make pauses.
-- Sound effects go inline as `*burp*`, `*sigh*`, `*gulp*`, `*cough*` or `*hiccup*` — they get synthesized. Never at the very start of a line. Anything in `(parentheses)` is a stage direction: not spoken, use sparingly.
+- Sound effects go inline as `*burp*`, `*belch*`, `*sigh*`, `*gulp*`, `*cough*` or `*hiccup*` — they get synthesized. They can interrupt a word (`node_mo *burp* dules`) if the character's style says so. Never at the very start of a line. Anything in `(parentheses)` is a stage direction: not spoken, use sparingly.
 - A `narrator` line to set the scene at the start is optional and usually worth it.
-- End on a button — a last line that lands.
+
+Comedy rhythm — this is what makes it a bit instead of a lecture:
+
+- **Escalate.** Each exchange raises the stakes or the absurdity a notch; the last third should be noticeably more unhinged than the first.
+- **One running gag.** Plant something small early (a wrong assumption, a flask, a dimension number) and call it back at least once.
+- **Interrupt.** The confident character cuts the other one off; the anxious one trails off. Lines can end mid-thought with `—`.
+- **The fix is real.** Bury the actual correct answer inside the bit, said fast, as if it's obvious. The listener should be able to act on it afterwards.
+- **Button.** End on the one line that lands — usually the confident character's contempt slipping into affection, or the anxious one being accidentally right. Never end on an explanation.
 
 ## 3. Perform
 

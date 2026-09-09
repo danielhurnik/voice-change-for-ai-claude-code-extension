@@ -18,6 +18,6 @@ Run:
 node "${CLAUDE_PLUGIN_ROOT}/scripts/say.mjs" mad-scientist "L-listen, kid. *burp* The cache key is the whole problem."
 ```
 
-Sound effects go inline as `*burp*`, `*sigh*`, `*gulp*`, `*cough*`, `*hiccup*`. The first run downloads the ~90 MB voice model once. If it prints `kokoro-js is not installed`, run `npm install --prefix "${CLAUDE_PLUGIN_ROOT}"` and retry, or add `--engine system` for the OS voice.
+Sound effects go inline as `*burp*`, `*belch*`, `*sigh*`, `*gulp*`, `*cough*`, `*hiccup*`. The first run downloads the ~90 MB voice model once. If it prints `kokoro-js is not installed`, run `npm install --prefix "${CLAUDE_PLUGIN_ROOT}"` and retry, or add `--engine system` for the OS voice.
 
 Afterwards print `**Name:** line` and the WAV path. Nothing else.

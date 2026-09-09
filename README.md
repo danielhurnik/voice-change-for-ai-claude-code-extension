@@ -131,7 +131,7 @@ A character is one JSON file. Drop it in `~/.config/voice-change-for-ai/characte
 | `crackle` | `amount`, `density` | vinyl pops and hiss |
 | `gain` / `normalize` | `db` / `peak` | level |
 
-Inline sound effects in any line: `*burp*`, `*sigh*`, `*gulp*`, `*cough*`, `*hiccup*`.
+Inline sound effects in any line: `*burp*`, `*belch*`, `*sigh*`, `*gulp*`, `*cough*`, `*hiccup*` — they can even interrupt a word (`node_mo *burp* dules`).
 Text in `(parentheses)` is a stage direction and is not spoken.
 
 ## Command line
