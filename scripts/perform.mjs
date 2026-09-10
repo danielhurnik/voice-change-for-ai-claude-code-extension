@@ -16,6 +16,7 @@ import { describeCharacters, loadCharacters, resolveCharacter } from "./lib/char
 import { createPlayer } from "./lib/play.mjs";
 import { describeEngine, outputDir, renderLine, seconds, slugify, tempWav, timestamp, writeWav } from "./lib/render.mjs";
 import { createEngine } from "./lib/tts.mjs";
+import { markPerformance } from "./lib/voice-mode.mjs";
 
 const log = (msg) => process.stderr.write(`${msg}\n`);
 
@@ -103,6 +104,7 @@ async function main() {
 
   const full = normalize(concat(parts), 0.9);
   const wavFile = writeWav(path.join(outDir, `${slug}.wav`), full);
+  markPerformance();
   fs.writeFileSync(path.join(outDir, `${slug}.json`), JSON.stringify({ title, ...script }, null, 2));
 
   let note = "";

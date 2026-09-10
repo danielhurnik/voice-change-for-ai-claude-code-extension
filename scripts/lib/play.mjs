@@ -22,15 +22,19 @@ function candidates(file) {
   }
 }
 
-/** @returns {Promise<string|null>} the command that played the file, or null if none worked */
-export function playFile(file) {
+/**
+ * @param {string} file
+ * @param {{ signal?: AbortSignal }} [opts] abort to kill the player mid-file
+ * @returns {Promise<string|null>} the command that played the file, or null if none worked (or it was aborted)
+ */
+export function playFile(file, { signal } = {}) {
   return new Promise((resolve) => {
     const list = candidates(file);
     const attempt = (i) => {
-      if (i >= list.length) return resolve(null);
+      if (signal?.aborted || i >= list.length) return resolve(null);
       const [cmd, args] = list[i];
       let settled = false;
-      const child = spawn(cmd, args, { stdio: "ignore" });
+      const child = spawn(cmd, args, { stdio: "ignore", signal, windowsHide: true });
       child.on("error", (err) => {
         if (settled) return;
         settled = true;
@@ -49,22 +53,22 @@ export function playFile(file) {
 }
 
 /** Sequential playback queue so line N plays while line N+1 is still being synthesized. */
-export function createPlayer() {
+export function createPlayer({ signal } = {}) {
   let queue = Promise.resolve();
   let failed = false;
   let used = null;
   return {
     enqueue(file) {
       queue = queue.then(async () => {
-        if (failed) return;
-        const cmd = await playFile(file);
+        if (failed || signal?.aborted) return;
+        const cmd = await playFile(file, { signal });
         if (cmd) used = cmd;
         else failed = true;
       });
     },
     async finish() {
       await queue;
-      return { failed, used };
+      return { failed: failed && !signal?.aborted, aborted: Boolean(signal?.aborted), used };
     },
   };
 }

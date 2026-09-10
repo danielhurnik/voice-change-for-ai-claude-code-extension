@@ -143,3 +143,13 @@ accent rules (`en-gb-scotland`, Lancashire, West Midlands, Caribbean, NYC).
 `generate_from_ids`, so pronunciation changes, not just spelling. Hamish the
 Scottish sysadmin is the first user. `ʉ` is mapped to `uː` because Kokoro
 never trained on it. Untested by ear as of writing.
+
+**2026-09-10 — voice mode (the hook mode) built.** `/voice on` registers
+nothing new: the plugin's `hooks/hooks.json` always has a UserPromptSubmit
+hook and a Stop hook, and both read `~/.config/voice-change-for-ai/voice-mode.json`
+to decide whether to speak. Each hook hands the text to a detached
+`speak.mjs`; a lock directory serialises speakers across processes; a stop
+flag interrupts them; a "last performance" marker stops the Stop hook from
+reading a `/converse` transcript back. `--persona` injects the reader's style
+as context so Claude writes in character. Known cost: the voice model loads
+in every speaker process (a few seconds per message) — a daemon would fix it.

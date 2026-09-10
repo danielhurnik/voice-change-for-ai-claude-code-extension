@@ -60,10 +60,34 @@ Requires Node 20 or newer.
 | `/converse rick morty <topic>` | Pick the cast (any id, name or alias) and a topic |
 | `/converse demon narrator roast my last commit` | Any two characters, any topic |
 | `/say robot <text>` | One line in one voice — good for testing and tuning |
+| `/voice on` | Read the whole conversation aloud as it happens — see below |
 
 Claude writes the script in each character's voice, runs the performer, plays the
 result, and prints the transcript plus the path of the saved WAV (send it to
 whoever needs to hear it).
+
+## Voice mode — read the chat aloud
+
+```
+/voice on                          # Doc reads Claude's replies, Kid reads yours
+/voice on --claude hamish --user robot
+/voice on --persona                # Claude also *writes* its replies in the character's voice
+/voice stop                        # interrupt whatever is being said
+/voice off
+```
+
+Claude Code fires a hook when you submit a message and another when Claude finishes
+replying. Voice mode uses both: each message is handed to a background speaker the
+moment it lands, spoken in that side's character voice, and the room goes quiet
+whenever nobody is talking — nothing loops, nothing polls. Markdown is stripped,
+code blocks are skipped, tables become lists, and long replies are trimmed at a
+sentence with "…and so on" (`--max-chars`). Speakers queue, so nobody talks over
+anybody. Settings live in `~/.config/voice-change-for-ai/voice-mode.json`;
+`/voice status` shows them and `/voice log` shows what the speaker has been doing.
+
+Without `--persona` the replies are read verbatim — Claude stays Claude, it just
+sounds like Doc. With it, Claude is told who will be reading its reply and writes
+the prose in that voice (code and facts stay exact, in code blocks).
 
 ## The cast
 
@@ -205,8 +229,9 @@ lives in the writing anyway.
 
 ## Status
 
-v1. The effects engine, sound effects, script parsing, character loading and both
-CLIs are covered by `scripts/selftest.mjs` using a synthetic voice; the Kokoro and
-OS-voice engines are wired up but their first real run on a laptop is the next step.
-Planned: a hook mode that speaks every Claude reply in a chosen character, more
-characters, and custom sound effects. Ideas and history in [BRAINSTORM.md](BRAINSTORM.md).
+v1. The effects engine, sound effects, script parsing, character loading, the
+hooks, the `/voice` CLI and the background speaker are covered by
+`scripts/selftest.mjs` using a synthetic voice; Kokoro has been heard on Windows.
+Planned: more characters, custom sound effects, a persistent speaker so the voice
+model loads once instead of per message. Ideas and history in
+[BRAINSTORM.md](BRAINSTORM.md).

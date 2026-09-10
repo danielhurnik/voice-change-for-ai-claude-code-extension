@@ -18,6 +18,7 @@ import { describeCharacters, loadCharacters, resolveCharacter } from "./lib/char
 import { playFile } from "./lib/play.mjs";
 import { describeEngine, outputDir, renderLine, seconds, slugify, timestamp, writeWav } from "./lib/render.mjs";
 import { ACCENTS, createEngine } from "./lib/tts.mjs";
+import { markPerformance } from "./lib/voice-mode.mjs";
 
 const log = (msg) => process.stderr.write(`${msg}\n`);
 const RAMP = [0, 0.35, 0.7, 1];
@@ -69,6 +70,7 @@ async function main() {
   const suffix = opts.ramp ? "-ramp" : opts.intensity === 1 ? "" : `-x${opts.intensity}`;
   const file = writeWav(path.join(outputDir(opts.out), `${timestamp()}-${character.id}-${slugify(text)}${suffix}.wav`), audio);
 
+  markPerformance();
   log(`${character.name}: ${text}`);
   log(`Voice engine: ${describeEngine(engine, character)}${opts.ramp ? ` — intensities ${RAMP.join(" → ")}` : opts.intensity !== 1 ? ` — intensity ${opts.intensity}` : ""}`);
   if (opts.play) {

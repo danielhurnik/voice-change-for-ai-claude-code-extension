@@ -6,8 +6,11 @@
 //   node scripts/selftest.mjs
 
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { applyEffects, concat, pitchShift, scaleEffects, silence, timeStretch } from "./lib/effects.mjs";
 import { loadCharacters, resolveCharacter } from "./lib/characters.mjs";
 import { renderLine, outputDir, writeWav, seconds } from "./lib/render.mjs";
@@ -15,6 +18,7 @@ import { parseLine, SFX, synthSfx } from "./lib/sfx.mjs";
 import { chunkText, createEngine, fakeSynth } from "./lib/tts.mjs";
 import { decodeWav, encodeWav, SAMPLE_RATE } from "./lib/wav.mjs";
 
+const HERE = path.dirname(fileURLToPath(import.meta.url));
 const fakeVoice = (text) => fakeSynth(text);
 const fakeEngine = createEngine("fake");
 
@@ -156,5 +160,83 @@ for (const c of chars.values()) {
 }
 const all = concat(rendered);
 writeWav(path.join(outDir, "all-characters.wav"), all);
+
+console.log("voice mode");
+const { speakable, lastAssistantMessage } = await import("./lib/speakable.mjs");
+check("speakable strips markdown, skips code, trims long replies", () => {
+  const md = "## Fix\n\nRun `npm install` then see [the docs](https://x.y/z).\n\n```js\nconst a = 1;\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n- **bold** item\n- second\n\n> quoted";
+  const { text, truncated } = speakable(md);
+  assert.equal(truncated, false);
+  assert.doesNotMatch(text, /const a|```|\*\*|\[|\]|https?:|#/);
+  assert.match(text, /Fix\. Run npm install then see the docs\./);
+  assert.match(text, /1, 2\./);
+  assert.match(text, /bold item\. second\. quoted\./);
+  const long = speakable("Sentence one is here. ".repeat(100), { maxChars: 200 });
+  assert.equal(long.truncated, true);
+  assert.ok(long.text.length < 240 && long.text.endsWith("…and so on."), long.text);
+});
+check("lastAssistantMessage reads a JSONL transcript", () => {
+  const jsonl = [
+    JSON.stringify({ type: "user", message: { content: "hi" } }),
+    JSON.stringify({ type: "assistant", message: { content: [{ type: "text", text: "First" }] } }),
+    JSON.stringify({ type: "assistant", message: { content: [{ type: "tool_use", name: "x" }, { type: "text", text: "Last reply" }] } }),
+    "not json",
+  ].join("\n");
+  assert.equal(lastAssistantMessage(jsonl), "Last reply");
+});
+
+// the hooks and the /voice CLI, in a throwaway settings directory
+const tmpCfg = fs.mkdtempSync(path.join(os.tmpdir(), "voice-change-selftest-"));
+const hookEnv = { ...process.env, VOICE_CHANGE_CONFIG_DIR: tmpCfg, VOICE_CHANGE_RUNTIME_DIR: path.join(tmpCfg, "runtime") };
+const run = (script, args, input) => spawnSync(process.execPath, [path.join(HERE, script), ...args], { env: hookEnv, input, encoding: "utf8" });
+check("voice.mjs on/set/off round-trips through the settings file", () => {
+  let r = run("voice.mjs", ["on", "--claude", "hamish", "--user", "kid", "--persona", "--engine", "fake"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /Voice mode: ON/);
+  assert.match(r.stdout, /Hamish \(scottish-engineer\)/);
+  r = run("voice.mjs", ["status"]);
+  assert.match(r.stdout, /persona\s+→ on/);
+  r = run("voice.mjs", ["on", "--claude", "nobody"]);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /Unknown character/);
+});
+check("hook.mjs speaks the user's prompt, skips slash commands, adds persona context", () => {
+  let r = run("hook.mjs", ["user", "--dry-run"], JSON.stringify({ prompt: "why is my **build** slow?" }));
+  assert.equal(r.status, 0, r.stderr);
+  const lines = r.stdout.trim().split("\n");
+  const decision = JSON.parse(lines[0]);
+  assert.equal(decision.character, "nervous-teen");
+  assert.equal(decision.speech, "why is my build slow?");
+  assert.match(lines.slice(1).join(" "), /Voice mode is on: your reply will be read aloud by Hamish/);
+  r = run("hook.mjs", ["user", "--dry-run"], JSON.stringify({ prompt: "/converse rick morty" }));
+  assert.doesNotMatch(r.stdout, /"speech"/);
+});
+check("hook.mjs reads Claude's reply from last_assistant_message or the transcript", () => {
+  let r = run("hook.mjs", ["claude", "--dry-run"], JSON.stringify({ last_assistant_message: "Done.\n\n```sh\nnpm test\n```\nAll green." }));
+  assert.equal(r.status, 0, r.stderr);
+  const decision = JSON.parse(r.stdout.trim());
+  assert.equal(decision.character, "scottish-engineer");
+  assert.equal(decision.speech, "Done. All green.");
+  const transcript = path.join(tmpCfg, "transcript.jsonl");
+  fs.writeFileSync(transcript, JSON.stringify({ type: "assistant", message: { content: [{ type: "text", text: "From the transcript." }] } }) + "\n");
+  r = run("hook.mjs", ["claude", "--dry-run"], JSON.stringify({ transcript_path: transcript }));
+  assert.equal(JSON.parse(r.stdout.trim()).speech, "From the transcript.");
+});
+check("speak.mjs renders a queued message end to end (fake engine, no playback)", () => {
+  const file = path.join(tmpCfg, "message.txt");
+  fs.writeFileSync(file, "First sentence here. Second one too!");
+  const r = run("speak.mjs", [file, "--character", "doc", "--engine", "fake", "--no-play"]);
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(!fs.existsSync(file), "queue file consumed");
+  const logText = fs.readFileSync(path.join(hookEnv.VOICE_CHANGE_RUNTIME_DIR, "speak.log"), "utf8");
+  assert.match(logText, /mad-scientist 1 chunks, rendered, no playback/);
+  assert.ok(!fs.existsSync(path.join(hookEnv.VOICE_CHANGE_RUNTIME_DIR, "speaking.lock")), "lock released");
+});
+check("hook.mjs is silent when voice mode is off", () => {
+  assert.equal(run("voice.mjs", ["off"]).status, 0);
+  const r = run("hook.mjs", ["claude", "--dry-run"], JSON.stringify({ last_assistant_message: "Hello" }));
+  assert.equal(r.stdout.trim(), "");
+});
+fs.rmSync(tmpCfg, { recursive: true, force: true });
 
 console.log(`\n${passed} checks passed. Listen to the fake-voice renders in ${outDir} (${seconds(all)}s total).`);
